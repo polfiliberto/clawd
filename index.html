@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clawd · Live Pixel Wallpaper</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --accent: #D97757;
+            --bg: rgba(10, 10, 10, 0.88);
+            --line: rgba(255, 255, 255, 0.08);
+            --text: #e5e5e5;
+            --muted: #8a8a8a;
+        }
+        * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
+        html, body {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background: #000; overflow: hidden; color: var(--text);
+            font-family: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+        }
+        canvas {
+            display: block; width: 100vw; height: 100vh;
+            image-rendering: pixelated; image-rendering: crisp-edges;
+        }
+
+        /* ---------- Aviso inicial (solo la primera vez) ---------- */
+        .hint {
+            position: fixed; top: 24px; left: 50%; transform: translateX(-50%);
+            padding: 6px 14px; border-radius: 999px; font-size: 11px; color: var(--muted);
+            background: var(--bg); border: 1px solid var(--line); backdrop-filter: blur(10px);
+            pointer-events: none; transition: opacity .5s ease, transform .5s ease; z-index: 20;
+        }
+        .hint b { color: #fff; font-weight: 600; }
+        .hint.gone { opacity: 0; transform: translate(-50%, -10px); }
+
+        /* ---------- HUD estilo terminal (Claude Code) ---------- */
+        .hud {
+            position: fixed; bottom: 24px; left: 50%; z-index: 30;
+            width: 95%; max-width: 1024px; padding: 16px;
+            background: rgba(10, 10, 10, 0.9); border: 1px solid rgba(38, 38, 38, 0.9); border-radius: 16px;
+            backdrop-filter: blur(12px); box-shadow: 0 25px 50px -12px rgba(0,0,0,.8);
+            transform: translate(-50%, 0); opacity: 1;
+            transition: opacity .45s cubic-bezier(.16,1,.3,1), transform .45s cubic-bezier(.16,1,.3,1);
+        }
+        .hud.hidden { opacity: 0; transform: translate(-50%, 16px) scale(.98); pointer-events: none; }
+
+        .hud-head {
+            display: flex; align-items: center; justify-content: space-between; gap: 12px;
+            margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid rgba(38,38,38,.8);
+            font-size: 11px; color: #a3a3a3;
+        }
+        .hud-head .left, .hud-head .right { display: flex; align-items: center; gap: 8px; }
+        .badge { padding: 2px 6px; border-radius: 4px; background: #262626; color: var(--accent); font-weight: 700; }
+        .prompt { color: var(--accent); }
+        .btn-close {
+            padding: 3px 8px; border-radius: 4px; font-size: 11px;
+            background: #171717; color: #a3a3a3; border: 1px solid #404040;
+        }
+
+        .hud-grid { display: grid; grid-template-columns: 1fr 1.35fr 1fr 0.9fr; gap: 12px; font-size: 12px; }
+        @media (max-width: 820px) { .hud-grid { grid-template-columns: 1fr 1fr; } }
+        .panel {
+            display: flex; flex-direction: column; justify-content: flex-start; gap: 8px; padding: 11px 12px;
+            background: rgba(23, 23, 23, 0.6); border: 1px solid rgba(38, 38, 38, 0.6); border-radius: 12px;
+        }
+        .panel-title {
+            display: flex; justify-content: space-between; align-items: center;
+            color: #a3a3a3; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; font-size: 10px;
+        }
+        .panel-value { color: var(--accent); font-weight: 700; text-transform: none; letter-spacing: 0; font-size: 11px; }
+        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+        .btn-grid .wide { grid-column: span 2; }
+        .outfit-grid { display: flex; flex-wrap: wrap; gap: 4px; }
+        .outfit-grid .btn-retro { flex: 1 1 calc(33.33% - 4px); padding: 4px 6px; font-size: 10px; gap: 4px; }
+        .outfit-grid .btn-retro.wide { flex: 1 1 100%; }
+        .outfit-grid .btn-retro .px-ico { width: 12px; height: 12px; }
+        .outfit-grid .btn-retro .clawd-icon { width: 13px; height: 9px; }
+
+        .btn-retro {
+            display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+            padding: 5px 8px; border-radius: 4px; font: inherit; font-size: 11px; color: #e5e5e5;
+            background: #141414; border: 1px solid #2e2e2e; cursor: pointer;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: all .15s ease;
+        }
+        .btn-retro.compact { padding: 3px 8px; }
+        .btn-retro .px-ico { width: 14px; height: 14px; flex-shrink: 0; shape-rendering: crispEdges; color: var(--accent); }
+        .btn-retro:hover { border-color: var(--accent); color: #fff; background: #1f1714; }
+        .btn-retro.active { background: var(--accent); color: #000; border-color: #ff9d7d; font-weight: 700; }
+        .btn-retro.active .px-ico { color: #000; }
+        .btn-retro.active .clawd-icon .body { fill: #000; }
+        .btn-retro.active .clawd-icon .eye { fill: var(--accent); }
+        .clawd-icon { width: 15px; height: 10px; flex-shrink: 0; shape-rendering: crispEdges; }
+
+        .quick { display: flex; justify-content: space-between; font-size: 10px; color: #737373; padding-top: 2px; }
+        .quick button { background: none; border: 0; padding: 0; font: inherit; color: inherit; cursor: pointer; }
+        .quick button:hover { color: #d4d4d4; }
+
+        input[type=range] {
+            -webkit-appearance: none; appearance: none; width: 100%; height: 6px; margin: 0;
+            background: #1a1a1a; border: 1px solid #333; border-radius: 3px; outline: none; cursor: pointer;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 12px; height: 16px; border-radius: 2px;
+            background: var(--accent); border: 1px solid #fff; cursor: pointer;
+        }
+        input[type=range]::-moz-range-thumb {
+            width: 12px; height: 16px; border-radius: 2px; background: var(--accent); border: 1px solid #fff; cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="wallpaperCanvas"></canvas>
+
+    <div id="hint" class="hint gone">Pulsa <b>[ESC]</b> para abrir ajustes</div>
+
+    <!-- HUD: se abre y se cierra únicamente con [ESC] -->
+    <div id="hud" class="hud hidden">
+        <div class="hud-head">
+            <div class="left">
+                <span class="badge">HUB</span>
+                <span><span class="prompt">&gt;_</span> clawd --settings</span>
+            </div>
+            <div class="right">
+                <button id="stickerBtn" class="btn-retro compact" title="Borde blanco estilo sticker">
+                    <svg class="px-ico" viewBox="0 0 12 12"><path fill="currentColor" d="M1 1h10v2H1zM1 9h10v2H1zM1 3h2v6H1zM9 3h2v6H9z"/></svg>
+                    <span>Borde</span>
+                </button>
+                <button id="fullscreenBtn" class="btn-retro compact" title="Pantalla completa">
+                    <svg class="px-ico" viewBox="0 0 12 12"><path fill="currentColor" d="M1 1h4v1.5H2.5V5H1zM7 1h4v4H9.5V2.5H7zM1 7h1.5v2.5H5V11H1zM9.5 7H11v4H7V9.5h2.5z"/></svg>
+                </button>
+                <span class="btn-close">[ESC]</span>
+            </div>
+        </div>
+
+        <div class="hud-grid">
+            <!-- Tamaño -->
+            <div class="panel">
+                <div class="panel-title"><span>Tamaño Píxel</span><span id="scaleLabel" class="panel-value">Mini (4x)</span></div>
+                <input id="scaleSlider" type="range" min="2" max="12" step="0.25" value="4">
+                <div class="quick">
+                    <button data-scale="3">Diminuto</button>
+                    <button data-scale="7">Medio</button>
+                    <button data-scale="11">Gigante</button>
+                </div>
+            </div>
+
+            <!-- Estilo -->
+            <div class="panel">
+                <div class="panel-title"><span>Estilo de Clawd</span></div>
+                <div id="outfitGroup" class="outfit-grid"></div>
+            </div>
+
+            <!-- Comportamiento -->
+            <div class="panel">
+                <div class="panel-title"><span>Comportamiento</span></div>
+                <div id="modeGroup" class="btn-grid"></div>
+            </div>
+
+            <!-- Fondo -->
+            <div class="panel">
+                <div class="panel-title"><span>Fondo</span></div>
+                <div id="bgGroup" class="btn-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // CONFIGURACIÓN
+        // ==========================================
+        const DEFAULTS = {
+            pixelSize: 4,            // 2..12 (Atajos simétricos: 3 Diminuto, 7 Medio, 11 Gigante)
+            outfit: 'sunglasses',    // 'sunglasses', 'classic', 'suit', 'wizard', 'gentleman', 'santa', 'headphones'
+            mode: 'center',          // 'center', 'wander', 'follow', 'dvd'
+            bgEffect: 'pure',        // 'pure', 'stars', 'matrix'
+            stickerBorder: false
+        };
+        const SLEEP_AFTER_MS = 18000; // Si no mueves el ratón durante 18 s, Clawd se duerme 💤
+        const STORAGE_KEY = 'clawd.settings';
+        const HINT_KEY = 'clawd.hintSeen';
+
+        const store = {
+            get(key) { try { return localStorage.getItem(key); } catch { return null; } },
+            set(key, val) { try { localStorage.setItem(key, val); } catch { /* sin almacenamiento */ } }
+        };
+
+        const CONFIG = { ...DEFAULTS };
+        try { Object.assign(CONFIG, JSON.parse(store.get(STORAGE_KEY) || '{}')); } catch { /* ignorar */ }
+        CONFIG.pixelSize = Math.min(12, Math.max(2, parseFloat(CONFIG.pixelSize) || DEFAULTS.pixelSize));
+        const saveConfig = () => store.set(STORAGE_KEY, JSON.stringify(CONFIG));
+
+        // Icono pixelado de Clawd (misma cuadrícula 18x12 que el sprite)
+        const CLAWD_ICON = `<svg class="clawd-icon" viewBox="0 0 18 12" aria-hidden="true">
+            <g class="body" fill="#D97C5B"><rect x="3" y="0" width="12" height="9"/><rect x="1" y="4" width="2" height="3"/><rect x="15" y="4" width="2" height="3"/>
+            <rect x="4" y="9" width="1" height="3"/><rect x="6" y="9" width="1" height="3"/><rect x="11" y="9" width="1" height="3"/><rect x="13" y="9" width="1" height="3"/></g>
+            <g class="eye" fill="#0B0B0B"><rect x="5" y="3" width="1" height="2"/><rect x="12" y="3" width="1" height="2"/></g></svg>`;
+
+        // Iconos pixel-art de 12x12 estilo terminal
+        const pxIcon = (d) => `<svg class="px-ico" viewBox="0 0 12 12" aria-hidden="true"><path fill="currentColor" d="${d}"/></svg>`;
+
+        const OUTFITS = [
+            { id: 'classic',    icon: CLAWD_ICON,                                                     label: 'Clawd', wide: true },
+            { id: 'sunglasses', icon: pxIcon('M1 3h10v1H1zm1 1h4v3H2zm5 0h4v3H7z'),                   label: 'Gafas' },
+            { id: 'suit',       icon: pxIcon('M5 1h2v2H5zm0 3h2v5H5zm-1 5h4v2H4z'),                   label: 'Traje' },
+            { id: 'wizard',     icon: pxIcon('M5 1h2v2H5zM4 3h4v3H4zM3 6h6v2H3zM1 8h10v2H1z'),        label: 'Mago' },
+            { id: 'gentleman',  icon: pxIcon('M3 1h6v6H3zM1 7h10v2H1z'),                              label: 'Elegante' },
+            { id: 'santa',      icon: pxIcon('M4 2h5v2H4zM3 4h5v2H3zM2 6h7v2H2zM9 4h2v2H9zM1 8h9v2H1z'), label: 'Navidad' },
+            { id: 'headphones', icon: pxIcon('M3 1h6v2H3zM1 3h2v3H1zM9 3h2v3H9zM1 6h3v4H1zM8 6h3v4H8z'), label: 'Auriculares' }
+        ];
+        const MODES = [
+            { id: 'center', icon: pxIcon('M5 1h2v3H5zM5 8h2v3H5zM1 5h3v2H1zM8 5h3v2H8zM5 5h2v2H5z'), label: 'Centro' },
+            { id: 'wander', icon: pxIcon('M2 2h2v2H2zM5 2h2v2H5zM2 5h4v3H2zM7 5h2v2H7zM9 7h2v2H9zM6 8h4v3H6z'), label: 'Pasear' },
+            { id: 'follow', icon: pxIcon('M2 1h2v9H2zM4 3h2v6H4zM6 5h2v3H6zM8 7h2v1H8zM6 9h2v2H6z'), label: 'Seguir' },
+            { id: 'dvd',    icon: pxIcon('M1 1h10v2H1zM1 9h10v2H1zM1 3h2v6H1zM9 3h2v6H9zM5 5h2v2H5z'), label: 'DVD' }
+        ];
+        const BACKGROUNDS = [
+            { id: 'pure',   icon: pxIcon('M2 2h8v8H2z'),                                             label: 'Negro' },
+            { id: 'stars',  icon: pxIcon('M5 1h2v3H5zM5 8h2v3H5zM1 5h10v2H1zM3 3h6v6H3z'),           label: 'Estrellas' },
+            { id: 'matrix', icon: pxIcon('M1 2h2v2H1zM3 4h2v2H3zM1 6h2v2H1zM6 8h5v2H6z'),            label: 'Terminal', wide: true }
+        ];
+
+        const canvas = document.getElementById('wallpaperCanvas');
+        const ctx = canvas.getContext('2d', { alpha: false });
+
+        let width = window.innerWidth;
+        let height = window.innerHeight;
+        let dpr = window.devicePixelRatio || 1;
+        let lastInteractionAt = performance.now();
+
+        const clawd = {
+            x: width / 2, y: height / 2,
+            vx: 1.4, vy: 1.1,
+            targetX: width / 2, targetY: height / 2,
+            walkFrame: 0, walkTimer: 0,
+            isMoving: false,
+            isSleeping: false,
+            sleepTimer: 0,
+            jumpY: 0, jumpVel: 0,
+            glassesDropY: 0, isDroppingGlasses: false
+        };
+
+        const mouse = { x: width / 2, y: height / 2 };
+
+        let particles = [];
+        let stars = [];
+        let matrixColumns = [];
+
+        const PALETTE = {
+            O: '#D97C5B', K: '#0B0B0B', G: '#1C1C1C', B: '#2E2E2E', W: '#FFFFFF',
+            S: '#3A3A3A', R: '#9E2A2B', M: '#C8D6E5', U: '#352B75', L: '#7A72B8', Y: '#FCE340',
+            X: '#D62828', C: '#38B000'
+        };
+
+        function wakeClawd() {
+            lastInteractionAt = performance.now();
+            if (clawd.isSleeping) {
+                clawd.isSleeping = false;
+                clawd.sleepTimer = 0;
+                clawd.jumpVel = -Math.max(3, CONFIG.pixelSize * 0.7);
+            }
+        }
+
+        function resizeCanvas() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            dpr = window.devicePixelRatio || 1;
+            canvas.width = Math.floor(width * dpr);
+            canvas.height = Math.floor(height * dpr);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctx.imageSmoothingEnabled = false;
+            if (CONFIG.mode === 'center') { clawd.x = width / 2; clawd.y = height / 2; }
+            initBackgroundFX();
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        // ==========================================
+        // FONDOS
+        // ==========================================
+        function initBackgroundFX() {
+            stars = [];
+            for (let i = 0; i < 65; i++) {
+                stars.push({
+                    x: Math.floor(Math.random() * width),
+                    y: Math.floor(Math.random() * height),
+                    size: Math.random() > 0.8 ? 2 : 1,
+                    phase: Math.random() * Math.PI * 2
+                });
+            }
+            const colWidth = 24;
+            matrixColumns = [];
+            for (let i = 0; i < Math.floor(width / colWidth); i++) {
+                matrixColumns.push({
+                    x: i * colWidth,
+                    y: Math.random() * height,
+                    speed: 0.6 + Math.random() * 1.2,
+                    char: Math.random() > 0.5 ? '1' : '0'
+                });
+            }
+        }
+
+        function drawBackground(time) {
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, width, height);
+
+            if (CONFIG.bgEffect === 'stars') {
+                for (const s of stars) {
+                    const alpha = Math.max(0, 0.12 + 0.25 * Math.sin(time * 0.002 + s.phase));
+                    ctx.fillStyle = `rgba(217, 119, 87, ${alpha.toFixed(2)})`;
+                    ctx.fillRect(s.x, s.y, s.size * 2, s.size * 2);
+                }
+            } else if (CONFIG.bgEffect === 'matrix') {
+                ctx.font = '12px "JetBrains Mono", monospace';
+                ctx.textAlign = 'left';
+                ctx.fillStyle = 'rgba(217, 119, 87, 0.09)';
+                for (const col of matrixColumns) {
+                    ctx.fillText(col.char, col.x, col.y);
+                    col.y += col.speed;
+                    if (Math.random() < 0.02) col.char = ['0', '1', '>', '_', '{', '}'][Math.floor(Math.random() * 6)];
+                    if (col.y > height) col.y = -10;
+                }
+            }
+        }
+
+        // ==========================================
+        // SPRITE DE CLAWD (cuadrícula 18 x 12)
+        // ==========================================
+        function drawPixelRect(gx, gy, gw, gh, color, originX, originY, pSize) {
+            ctx.fillStyle = color;
+            ctx.fillRect(
+                Math.round(originX + gx * pSize),
+                Math.round(originY + gy * pSize),
+                Math.round(gw * pSize),
+                Math.round(gh * pSize)
+            );
+        }
+
+        function drawClawdSprite(centerX, centerY, time) {
+            const p = CONFIG.pixelSize;
+            const spriteW = 18 * p;
+            const spriteH = 12 * p;
+
+            // Respiración más lenta y profunda cuando duerme
+            const breathRate = clawd.isSleeping ? 0.0018 : 0.0035;
+            const breathPx = Math.sin(time * breathRate) > 0.25 ? (clawd.isSleeping ? 1 : -1) : 0;
+            const jumpPx = Math.round(clawd.jumpY / p);
+            const ox = Math.round(centerX - spriteW / 2);
+            const oy = Math.round(centerY - spriteH / 2 + (breathPx + jumpPx) * p);
+
+            // Mirada sutil hacia el cursor (si está despierto)
+            let lookX = 0, lookY = 0;
+            if (!clawd.isSleeping) {
+                const dx = mouse.x - centerX;
+                const dy = mouse.y - centerY;
+                if (Math.hypot(dx, dy) > p * 4) {
+                    lookX = Math.abs(dx) > 40 ? Math.sign(dx) : 0;
+                    lookY = Math.abs(dy) > 60 ? (dy > 0 ? 1 : 0) : 0;
+                }
+            }
+
+            // 0. Borde blanco tipo sticker
+            if (CONFIG.stickerBorder) {
+                drawPixelRect(2, -1, 14, 11, PALETTE.W, ox, oy, p);
+                drawPixelRect(0, 3, 18, 5, PALETTE.W, ox, oy, p);
+                drawPixelRect(3, 8, 5, 5, PALETTE.W, ox, oy, p);
+                drawPixelRect(10, 8, 5, 5, PALETTE.W, ox, oy, p);
+            }
+
+            // 1. Cuerpo
+            const bodyColor = PALETTE.O;
+            drawPixelRect(3, 0, 12, 9, bodyColor, ox, oy, p);
+
+            // 2. Brazos
+            const armOffset = clawd.isMoving ? (clawd.walkFrame % 2 === 0 ? 0 : -1) : (clawd.isSleeping ? 1 : 0);
+            drawPixelRect(1, 4 + armOffset, 2, 3, bodyColor, ox, oy, p);
+            drawPixelRect(15, 4 - (clawd.isSleeping ? -1 : armOffset), 2, 3, bodyColor, ox, oy, p);
+
+            // 3. Ropa / accesorios de cuello
+            if (CONFIG.outfit === 'suit') {
+                drawPixelRect(3, 5, 12, 4, PALETTE.G, ox, oy, p);
+                drawPixelRect(1, 4, 2, 2, PALETTE.G, ox, oy, p);
+                drawPixelRect(15, 4, 2, 2, PALETTE.G, ox, oy, p);
+                drawPixelRect(7, 5, 4, 1, PALETTE.W, ox, oy, p);
+                drawPixelRect(8, 6, 2, 1, PALETTE.W, ox, oy, p);
+                drawPixelRect(8.5, 5, 1, 3, PALETTE.K, ox, oy, p);
+            } else if (CONFIG.outfit === 'gentleman') {
+                drawPixelRect(7, 5, 4, 1, PALETTE.G, ox, oy, p);
+                drawPixelRect(6, 5.5, 2, 1, PALETTE.G, ox, oy, p);
+                drawPixelRect(10, 5.5, 2, 1, PALETTE.G, ox, oy, p);
+                drawPixelRect(7, 7, 4, 2, PALETTE.G, ox, oy, p);
+                drawPixelRect(8.5, 7, 1, 2, PALETTE.B, ox, oy, p);
+            } else if (CONFIG.outfit === 'santa') {
+                // Bufanda navideña roja y blanca con caída lateral
+                drawPixelRect(3, 7, 12, 1, PALETTE.X, ox, oy, p);
+                drawPixelRect(5, 7, 2, 1, PALETTE.W, ox, oy, p);
+                drawPixelRect(9, 7, 2, 1, PALETTE.W, ox, oy, p);
+                drawPixelRect(12, 8, 2, 2, PALETTE.X, ox, oy, p);
+                drawPixelRect(12, 9, 2, 0.5, PALETTE.W, ox, oy, p);
+            }
+
+            // 4. Patitas (encogidas si duerme)
+            let leg1H = clawd.isSleeping ? 2 : 3;
+            let leg2H = leg1H, leg3H = leg1H, leg4H = leg1H;
+            if (clawd.isMoving) {
+                if (clawd.walkFrame % 2 === 0) { leg1H = 2; leg3H = 2; }
+                else { leg2H = 2; leg4H = 2; }
+            }
+            drawPixelRect(4, 9, 1, leg1H, bodyColor, ox, oy, p);
+            drawPixelRect(6, 9, 1, leg2H, bodyColor, ox, oy, p);
+            drawPixelRect(11, 9, 1, leg3H, bodyColor, ox, oy, p);
+            drawPixelRect(13, 9, 1, leg4H, bodyColor, ox, oy, p);
+
+            // 5. Ojos / gafas / monóculo
+            if (CONFIG.outfit === 'sunglasses' || clawd.isDroppingGlasses) {
+                if (clawd.isDroppingGlasses && clawd.glassesDropY < -2) {
+                    drawPixelRect(5 + lookX * 0.5, 3 + lookY, 1, 2, PALETTE.K, ox, oy, p);
+                    drawPixelRect(12 + lookX * 0.5, 3 + lookY, 1, 2, PALETTE.K, ox, oy, p);
+                }
+                const gOffX = lookX * 0.5;
+                const gOffY = Math.round(clawd.glassesDropY) + lookY * 0.5;
+
+                drawPixelRect(2 + gOffX, 2 + gOffY, 14, 1, PALETTE.B, ox, oy, p);
+                drawPixelRect(3 + gOffX, 2 + gOffY, 12, 1, PALETTE.G, ox, oy, p);
+
+                drawPixelRect(3 + gOffX, 3 + gOffY, 5, 1, PALETTE.K, ox, oy, p);
+                drawPixelRect(4 + gOffX, 4 + gOffY, 4, 1, PALETTE.K, ox, oy, p);
+                drawPixelRect(4 + gOffX, 5 + gOffY, 3, 1, PALETTE.K, ox, oy, p);
+
+                drawPixelRect(10 + gOffX, 3 + gOffY, 5, 1, PALETTE.K, ox, oy, p);
+                drawPixelRect(10 + gOffX, 4 + gOffY, 4, 1, PALETTE.K, ox, oy, p);
+                drawPixelRect(10 + gOffX, 5 + gOffY, 3, 1, PALETTE.K, ox, oy, p);
+
+                drawPixelRect(4 + gOffX, 3 + gOffY, 1, 1, PALETTE.W, ox, oy, p);
+                drawPixelRect(5 + gOffX, 4 + gOffY, 1, 1, PALETTE.W, ox, oy, p);
+                drawPixelRect(11 + gOffX, 3 + gOffY, 1, 1, PALETTE.W, ox, oy, p);
+                drawPixelRect(12 + gOffX, 4 + gOffY, 1, 1, PALETTE.W, ox, oy, p);
+            } else if (clawd.isSleeping) {
+                // Ojos cerrados durmiendo (línea horizontal baja)
+                drawPixelRect(4.5, 4.5, 2, 0.6, PALETTE.K, ox, oy, p);
+                drawPixelRect(11.5, 4.5, 2, 0.6, PALETTE.K, ox, oy, p);
+            } else {
+                const isBlinking = (Math.floor(time / 120) % 35 === 0);
+                const eyeH = isBlinking ? 0.5 : 2;
+                const eyeY = isBlinking ? 4 : 3;
+                drawPixelRect(5 + lookX * 0.5, eyeY + lookY * 0.5, 1, eyeH, PALETTE.K, ox, oy, p);
+
+                if (CONFIG.outfit === 'gentleman') {
+                    drawPixelRect(10.5, 2, 4, 4, PALETTE.M, ox, oy, p);
+                    drawPixelRect(10.5, 2, 4, 0.5, PALETTE.B, ox, oy, p);
+                    drawPixelRect(10.5, 5.5, 4, 0.5, PALETTE.B, ox, oy, p);
+                    drawPixelRect(10.5, 2, 0.5, 4, PALETTE.B, ox, oy, p);
+                    drawPixelRect(14, 2, 0.5, 4, PALETTE.B, ox, oy, p);
+                    drawPixelRect(13, 2.5, 1, 1, PALETTE.W, ox, oy, p);
+                    drawPixelRect(14.5, 5, 0.5, 2, PALETTE.B, ox, oy, p);
+                }
+                drawPixelRect(12 + lookX * 0.5, eyeY + lookY * 0.5, 1, eyeH, PALETTE.K, ox, oy, p);
+            }
+
+            // 6. Sombreros y auriculares
+            if (CONFIG.outfit === 'suit') {
+                drawPixelRect(3, -4, 11, 4, PALETTE.G, ox, oy, p);
+                drawPixelRect(4, -5, 9, 1, PALETTE.S, ox, oy, p);
+                drawPixelRect(3, -1, 14, 1, PALETTE.S, ox, oy, p);
+            } else if (CONFIG.outfit === 'wizard') {
+                drawPixelRect(2, -1, 14, 1, PALETTE.U, ox, oy, p);
+                drawPixelRect(4, -2, 10, 1, PALETTE.L, ox, oy, p);
+                drawPixelRect(5, -4, 8, 2, PALETTE.U, ox, oy, p);
+                drawPixelRect(6, -6, 6, 2, PALETTE.U, ox, oy, p);
+                drawPixelRect(8, -8, 5, 2, PALETTE.U, ox, oy, p);
+                drawPixelRect(11, -7, 3, 1, PALETTE.U, ox, oy, p);
+                drawPixelRect(6, -3, 1, 1, PALETTE.Y, ox, oy, p);
+                drawPixelRect(9, -6, 1, 1, PALETTE.Y, ox, oy, p);
+                drawPixelRect(11, -4, 1, 1, PALETTE.Y, ox, oy, p);
+                drawPixelRect(17, 2, 1, 4, '#6b4c35', ox, oy, p);
+                drawPixelRect(17, 1, 1, 1, PALETTE.Y, ox, oy, p);
+            } else if (CONFIG.outfit === 'gentleman') {
+                drawPixelRect(5, -1, 11, 1, PALETTE.G, ox, oy, p);
+                drawPixelRect(7, -2, 7, 1, PALETTE.R, ox, oy, p);
+                drawPixelRect(7, -6, 7, 4, PALETTE.G, ox, oy, p);
+                drawPixelRect(7, -6, 7, 0.5, PALETTE.S, ox, oy, p);
+            } else if (CONFIG.outfit === 'santa') {
+                // Gorro de Navidad rojo con ribete y pompón blancos
+                drawPixelRect(2, -1, 14, 1.5, PALETTE.W, ox, oy, p);
+                drawPixelRect(3, -3, 11, 2, PALETTE.X, ox, oy, p);
+                drawPixelRect(4, -5, 9, 2, PALETTE.X, ox, oy, p);
+                drawPixelRect(6, -6, 7, 1, PALETTE.X, ox, oy, p);
+                drawPixelRect(12, -5, 3, 2, PALETTE.X, ox, oy, p);
+                drawPixelRect(14, -4, 2.5, 2.5, PALETTE.W, ox, oy, p); // Pompón
+            } else if (CONFIG.outfit === 'headphones') {
+                // Diadema superior y cascos laterales con LED verde
+                drawPixelRect(3, -2, 12, 1, PALETTE.S, ox, oy, p);
+                drawPixelRect(2, -1, 2, 2, PALETTE.S, ox, oy, p);
+                drawPixelRect(14, -1, 2, 2, PALETTE.S, ox, oy, p);
+                drawPixelRect(1, 1, 2, 4, PALETTE.G, ox, oy, p);
+                drawPixelRect(15, 1, 2, 4, PALETTE.G, ox, oy, p);
+                drawPixelRect(1, 2, 1, 2, PALETTE.C, ox, oy, p);
+                drawPixelRect(16, 2, 1, 2, PALETTE.C, ox, oy, p);
+            }
+        }
+
+        // ==========================================
+        // FÍSICAS Y MOVIMIENTO
+        // ==========================================
+        function spawnFootstepParticle() {
+            const p = CONFIG.pixelSize;
+            particles.push({
+                x: clawd.x + (Math.random() - 0.5) * p * 8,
+                y: clawd.y + p * 6,
+                size: Math.max(2, Math.floor(p * 0.8)),
+                alpha: 0.65,
+                color: CONFIG.outfit === 'wizard' ? PALETTE.Y : (CONFIG.outfit === 'santa' ? PALETTE.W : PALETTE.O)
+            });
+        }
+
+        function spawnSleepParticle() {
+            const p = CONFIG.pixelSize;
+            const tall = ['wizard', 'gentleman', 'suit', 'santa'].includes(CONFIG.outfit);
+            particles.push({
+                x: clawd.x + p * 6 + (Math.random() - 0.5) * p * 2,
+                y: clawd.y - p * (tall ? 8 : 4),
+                vx: 0.25 + Math.random() * 0.2,
+                vy: -0.45,
+                text: CONFIG.outfit === 'headphones' && Math.random() < 0.5 ? '♪' : 'z',
+                size: Math.max(10, Math.round(p * 2.2)),
+                alpha: 0.9,
+                color: CONFIG.outfit === 'headphones' ? PALETTE.C : '#FFFFFF'
+            });
+        }
+
+        function updateClawd(time) {
+            const p = CONFIG.pixelSize;
+            const marginX = p * 12;
+            const marginY = p * 10;
+            clawd.isMoving = false;
+
+            // Comprobar si debe dormirse por inactividad del ratón (salvo en modo DVD)
+            if (!clawd.isSleeping && !hudOpen && CONFIG.mode !== 'dvd' && (time - lastInteractionAt) > SLEEP_AFTER_MS) {
+                clawd.isSleeping = true;
+            }
+
+            if (clawd.isSleeping) {
+                clawd.sleepTimer++;
+                if (clawd.sleepTimer % 55 === 0) spawnSleepParticle();
+            } else if (CONFIG.mode === 'center') {
+                const dx = (width / 2) - clawd.x;
+                const dy = (height / 2) - clawd.y;
+                if (Math.hypot(dx, dy) > 2) {
+                    clawd.x += dx * 0.08;
+                    clawd.y += dy * 0.08;
+                    clawd.isMoving = true;
+                } else {
+                    clawd.x = width / 2;
+                    clawd.y = height / 2;
+                }
+            } else if (CONFIG.mode === 'wander') {
+                const dx = clawd.targetX - clawd.x;
+                const dy = clawd.targetY - clawd.y;
+                const dist = Math.hypot(dx, dy);
+                if (dist > 4) {
+                    const speed = Math.max(0.8, p * 0.25);
+                    clawd.x += (dx / dist) * speed;
+                    clawd.y += (dy / dist) * speed;
+                    clawd.isMoving = true;
+                } else if (Math.random() < 0.015) {
+                    clawd.targetX = Math.max(marginX, Math.min(width - marginX, width / 2 + (Math.random() - 0.5) * width * 0.6));
+                    clawd.targetY = Math.max(marginY, Math.min(height - marginY, height / 2 + (Math.random() - 0.5) * height * 0.6));
+                }
+            } else if (CONFIG.mode === 'follow') {
+                const dx = mouse.x - clawd.x;
+                const dy = mouse.y - clawd.y;
+                const dist = Math.hypot(dx, dy);
+                if (dist > p * 10) {
+                    const speed = Math.min(dist * 0.05, Math.max(1.5, p * 0.45));
+                    clawd.x += (dx / dist) * speed;
+                    clawd.y += (dy / dist) * speed;
+                    clawd.isMoving = true;
+                }
+            } else if (CONFIG.mode === 'dvd') {
+                const speedScale = Math.max(1.2, p * 0.32);
+                clawd.x += clawd.vx * speedScale;
+                clawd.y += clawd.vy * speedScale;
+                clawd.isMoving = true;
+
+                if (clawd.x < marginX) { clawd.x = marginX; clawd.vx *= -1; }
+                if (clawd.x > width - marginX) { clawd.x = width - marginX; clawd.vx *= -1; }
+                if (clawd.y < marginY) { clawd.y = marginY; clawd.vy *= -1; }
+                if (clawd.y > height - marginY) { clawd.y = height - marginY; clawd.vy *= -1; }
+            }
+
+            if (clawd.isMoving) {
+                clawd.walkTimer++;
+                if (clawd.walkTimer % 8 === 0) {
+                    clawd.walkFrame++;
+                    if (Math.random() < 0.5) spawnFootstepParticle();
+                }
+            }
+
+            // Notas musicales ocasionales con los auriculares puestos
+            if (!clawd.isSleeping && CONFIG.outfit === 'headphones' && Math.random() < 0.015) {
+                particles.push({
+                    x: clawd.x + (Math.random() - 0.5) * p * 12,
+                    y: clawd.y - p * 4,
+                    vx: (Math.random() - 0.5) * 0.3,
+                    vy: -0.5,
+                    text: Math.random() < 0.5 ? '♪' : '♫',
+                    size: Math.max(10, Math.round(p * 2)),
+                    alpha: 0.85,
+                    color: PALETTE.C
+                });
+            }
+
+            if (clawd.jumpY < 0 || clawd.jumpVel !== 0) {
+                clawd.jumpY += clawd.jumpVel;
+                clawd.jumpVel += 0.65;
+                if (clawd.jumpY >= 0) { clawd.jumpY = 0; clawd.jumpVel = 0; }
+            }
+
+            if (clawd.isDroppingGlasses) {
+                clawd.glassesDropY += 0.35;
+                if (clawd.glassesDropY >= 0) {
+                    clawd.glassesDropY = 0;
+                    clawd.isDroppingGlasses = false;
+                }
+            }
+        }
+
+        function drawAndUpdateParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const pt = particles[i];
+                ctx.fillStyle = pt.color;
+                ctx.globalAlpha = Math.max(0, pt.alpha);
+                if (pt.text) {
+                    ctx.font = `bold ${pt.size}px "JetBrains Mono", monospace`;
+                    ctx.textAlign = 'center';
+                    ctx.fillText(pt.text, Math.round(pt.x), Math.round(pt.y));
+                    pt.x += pt.vx || 0;
+                    pt.y += pt.vy || -0.3;
+                    pt.alpha -= 0.012;
+                } else {
+                    ctx.fillRect(Math.round(pt.x), Math.round(pt.y), pt.size, pt.size);
+                    pt.alpha -= 0.02;
+                    pt.y -= 0.2;
+                }
+                if (pt.alpha <= 0) particles.splice(i, 1);
+            }
+            ctx.globalAlpha = 1.0;
+        }
+
+        function triggerClawdTrick() {
+            wakeClawd();
+            clawd.jumpVel = -Math.max(4.5, CONFIG.pixelSize * 1.1);
+            for (let i = 0; i < 10; i++) {
+                particles.push({
+                    x: clawd.x + (Math.random() - 0.5) * CONFIG.pixelSize * 12,
+                    y: clawd.y + (Math.random() - 0.5) * CONFIG.pixelSize * 8,
+                    size: Math.max(2, CONFIG.pixelSize),
+                    alpha: 0.85,
+                    color: i % 2 === 0 ? PALETTE.O : '#FFFFFF'
+                });
+            }
+        }
+
+        function dropGlasses(from = -12) {
+            clawd.isDroppingGlasses = true;
+            clawd.glassesDropY = from;
+        }
+
+        // ==========================================
+        // HUD: se abre y se cierra únicamente con [ESC]
+        // ==========================================
+        const hud = document.getElementById('hud');
+        const hint = document.getElementById('hint');
+        let hudOpen = false;
+
+        function openHud() {
+            wakeClawd();
+            hudOpen = true;
+            hud.classList.remove('hidden');
+            hint.classList.add('gone');
+        }
+        function closeHud() {
+            lastInteractionAt = performance.now();
+            hudOpen = false;
+            hud.classList.add('hidden');
+            if (document.activeElement && hud.contains(document.activeElement)) document.activeElement.blur();
+        }
+
+        window.addEventListener('keydown', (e) => {
+            wakeClawd();
+            if (e.key !== 'Escape' || e.repeat) return;
+            e.preventDefault();
+            hudOpen ? closeHud() : openHud();
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (Math.hypot(e.clientX - mouse.x, e.clientY - mouse.y) > 2) wakeClawd();
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+        });
+
+        const isOnClawd = (x, y) => Math.hypot(x - clawd.x, y - clawd.y) <= Math.max(45, CONFIG.pixelSize * 12);
+
+        canvas.addEventListener('mousedown', (e) => {
+            wakeClawd();
+            if (isOnClawd(e.clientX, e.clientY)) {
+                triggerClawdTrick();
+            } else if (CONFIG.mode === 'wander') {
+                clawd.targetX = e.clientX;
+                clawd.targetY = e.clientY;
+            }
+        });
+
+        // ==========================================
+        // CONTROLES
+        // ==========================================
+        function buildButtons(containerId, items, key, onPick) {
+            const container = document.getElementById(containerId);
+            const buttons = items.map(item => {
+                const b = document.createElement('button');
+                b.className = 'btn-retro' + (item.wide ? ' wide' : '');
+                b.innerHTML = `${item.icon} <span>${item.label}</span>`;
+                b.addEventListener('click', () => {
+                    CONFIG[key] = item.id;
+                    buttons.forEach(x => x.classList.toggle('active', x === b));
+                    saveConfig();
+                    onPick && onPick(item.id);
+                });
+                b.classList.toggle('active', CONFIG[key] === item.id);
+                container.appendChild(b);
+                return b;
+            });
+        }
+
+        buildButtons('outfitGroup', OUTFITS, 'outfit', (id) => {
+            if (id === 'sunglasses') dropGlasses(-12); else triggerClawdTrick();
+        });
+        buildButtons('modeGroup', MODES, 'mode', (id) => {
+            if (id === 'wander') {
+                clawd.targetX = width / 2 + (Math.random() - 0.5) * 300;
+                clawd.targetY = height / 2 + (Math.random() - 0.5) * 200;
+            }
+        });
+        buildButtons('bgGroup', BACKGROUNDS, 'bgEffect');
+
+        const scaleSlider = document.getElementById('scaleSlider');
+        const scaleLabel = document.getElementById('scaleLabel');
+
+        function updateScale(val) {
+            CONFIG.pixelSize = Math.min(12, Math.max(2, parseFloat(val) || DEFAULTS.pixelSize));
+            scaleSlider.value = CONFIG.pixelSize;
+            let desc = 'Medio';
+            if (CONFIG.pixelSize <= 3.25) desc = 'Diminuto';
+            else if (CONFIG.pixelSize <= 5) desc = 'Mini';
+            else if (CONFIG.pixelSize >= 9.5) desc = 'Gigante';
+            const num = Number(CONFIG.pixelSize.toFixed(1));
+            scaleLabel.textContent = `${desc} (${num}x)`;
+        }
+        scaleSlider.addEventListener('input', (e) => { updateScale(e.target.value); saveConfig(); });
+        document.querySelectorAll('[data-scale]').forEach(btn => {
+            btn.addEventListener('click', () => { updateScale(btn.dataset.scale); saveConfig(); });
+        });
+
+        const stickerBtn = document.getElementById('stickerBtn');
+        stickerBtn.classList.toggle('active', CONFIG.stickerBorder);
+        stickerBtn.addEventListener('click', () => {
+            CONFIG.stickerBorder = !CONFIG.stickerBorder;
+            stickerBtn.classList.toggle('active', CONFIG.stickerBorder);
+            saveConfig();
+        });
+
+        document.getElementById('fullscreenBtn').addEventListener('click', () => {
+            if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
+            else document.exitFullscreen().catch(() => {});
+        });
+
+        // ==========================================
+        // BUCLE PRINCIPAL
+        // ==========================================
+        function animate(time) {
+            drawBackground(time);
+            drawAndUpdateParticles();
+            updateClawd(time);
+            drawClawdSprite(clawd.x, clawd.y, time);
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('load', () => {
+            resizeCanvas();
+            updateScale(CONFIG.pixelSize);
+            dropGlasses(-12);
+
+            // Aviso solo la primera vez que se abre
+            if (!store.get(HINT_KEY)) {
+                hint.classList.remove('gone');
+                setTimeout(() => hint.classList.add('gone'), 4000);
+                store.set(HINT_KEY, '1');
+            }
+            requestAnimationFrame(animate);
+        });
+    </script>
+</body>
+</html>
