@@ -171,11 +171,11 @@
         // CONFIGURACIÓN
         // ==========================================
         const DEFAULTS = {
-            pixelSize: 4,            // 2..12 (Atajos simétricos: 3 Diminuto, 7 Medio, 11 Gigante)
-            outfit: 'sunglasses',    // 'sunglasses', 'classic', 'suit', 'wizard', 'gentleman', 'santa', 'headphones'
+            pixelSize: 4,            // 2..12 (3 Tiny, 7 Medium, 11 Giant)
+            outfit: 'sunglasses',    // 'classic' (Clawd), 'sunglasses' (Shades), 'suit', 'wizard', 'gentleman', 'santa', 'headphones'
             mode: 'center',          // 'center', 'wander', 'follow', 'dvd'
-            bgEffect: 'pure',        // 'pure', 'stars', 'matrix'
-            stickerBorder: false
+            bgEffect: 'pure',        // 'pure' (Black), 'stars' (Stars), 'matrix' (Terminal)
+            stickerBorder: false     // true / false (Border)
         };
         const SLEEP_AFTER_MS = 18000; // Si no mueves el ratón durante 18 s, Clawd se duerme 💤
         const STORAGE_KEY = 'clawd.settings';

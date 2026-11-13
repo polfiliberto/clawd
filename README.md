@@ -12,11 +12,11 @@ Single file (`index.html`), zero dependencies — ready for **Lively Wallpaper**
 ## `>_` features
 
 ```txt
-size          2x .. 12x  (Tiny 3x · Medium 7x · Giant 11x)
-styles        Clawd · Sunglasses · Suit · Wizard · Gentleman · Santa · Headphones
-modes         Center · Wander · Follow · DVD
-backgrounds   Pure Black (OLED) · Stars · Terminal
-extras        Sticker white border · Auto-sleep mode (zZz) · Cursor eye-tracking
+pixel size    2x .. 12x  (Tiny 3x · Medium 7x · Giant 11x)
+clawd style   Clawd · Shades · Suit · Wizard · Gentleman · Santa · Headphones
+behavior      Center · Wander · Follow · DVD
+background    Black (OLED) · Stars · Terminal
+extras        Border (white sticker) · Auto-sleep mode (zZz) · Cursor eye-tracking
 ```
 
 ---
@@ -64,10 +64,10 @@ You can customize the default startup settings by editing `DEFAULTS` inside `ind
 ```js
 const DEFAULTS = {
     pixelSize: 4,            // 2..12 (3 Tiny, 7 Medium, 11 Giant)
-    outfit: 'sunglasses',    // 'classic', 'sunglasses', 'suit', 'wizard', 'gentleman', 'santa', 'headphones'
+    outfit: 'sunglasses',    // 'classic' (Clawd), 'sunglasses' (Shades), 'suit', 'wizard', 'gentleman', 'santa', 'headphones'
     mode: 'center',          // 'center', 'wander', 'follow', 'dvd'
-    bgEffect: 'pure',        // 'pure', 'stars', 'matrix'
-    stickerBorder: false
+    bgEffect: 'pure',        // 'pure' (Black), 'stars' (Stars), 'matrix' (Terminal)
+    stickerBorder: false     // true / false (Border)
 };
 ```
 
