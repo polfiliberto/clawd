@@ -4,7 +4,7 @@ Interactive pixel-art live wallpaper featuring **Clawd**, the beloved 8-bit term
 Single file (`index.html`), zero dependencies — ready for **Lively Wallpaper**, **Wallpaper Engine**, or any web browser.
 
 <p align="center">
-  <img src="preview.svg" alt="Clawd Live Pixel Wallpaper Animation" width="100%">
+  <img src="preview.gif" alt="Clawd Live Pixel Wallpaper Animation" width="100%">
 </p>
 
 ---
