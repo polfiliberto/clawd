@@ -1,6 +1,6 @@
 # `>_` clawd
 
-Interactive pixel-art live wallpaper featuring **Clawd**, the beloved 8-bit terminal mascot of **Claude Code**.  
+**Clawd** — the **Claude Code** terminal pet — doing absolutely nothing productive on your desktop.  
 Single file (`index.html`), zero dependencies — ready for **Lively Wallpaper**, **Wallpaper Engine**, or any web browser.
 
 <p align="center">
