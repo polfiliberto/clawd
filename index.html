@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -113,7 +113,7 @@
 
     <canvas id="wallpaperCanvas"></canvas>
 
-    <div id="hint" class="hint gone">Pulsa <b>[ESC]</b> para abrir ajustes</div>
+    <div id="hint" class="hint gone">Press <b>[ESC]</b> to open settings</div>
 
     <!-- HUD: se abre y se cierra únicamente con [ESC] -->
     <div id="hud" class="hud hidden">
@@ -123,11 +123,11 @@
                 <span><span class="prompt">&gt;_</span> clawd --settings</span>
             </div>
             <div class="right">
-                <button id="stickerBtn" class="btn-retro compact" title="Borde blanco estilo sticker">
+                <button id="stickerBtn" class="btn-retro compact" title="Sticker white border">
                     <svg class="px-ico" viewBox="0 0 12 12"><path fill="currentColor" d="M1 1h10v2H1zM1 9h10v2H1zM1 3h2v6H1zM9 3h2v6H9z"/></svg>
-                    <span>Borde</span>
+                    <span>Border</span>
                 </button>
-                <button id="fullscreenBtn" class="btn-retro compact" title="Pantalla completa">
+                <button id="fullscreenBtn" class="btn-retro compact" title="Fullscreen">
                     <svg class="px-ico" viewBox="0 0 12 12"><path fill="currentColor" d="M1 1h4v1.5H2.5V5H1zM7 1h4v4H9.5V2.5H7zM1 7h1.5v2.5H5V11H1zM9.5 7H11v4H7V9.5h2.5z"/></svg>
                 </button>
                 <span class="btn-close">[ESC]</span>
@@ -137,30 +137,30 @@
         <div class="hud-grid">
             <!-- Tamaño -->
             <div class="panel">
-                <div class="panel-title"><span>Tamaño Píxel</span><span id="scaleLabel" class="panel-value">Mini (4x)</span></div>
+                <div class="panel-title"><span>Pixel Size</span><span id="scaleLabel" class="panel-value">Mini (4x)</span></div>
                 <input id="scaleSlider" type="range" min="2" max="12" step="0.25" value="4">
                 <div class="quick">
-                    <button data-scale="3">Diminuto</button>
-                    <button data-scale="7">Medio</button>
-                    <button data-scale="11">Gigante</button>
+                    <button data-scale="3">Tiny</button>
+                    <button data-scale="7">Medium</button>
+                    <button data-scale="11">Giant</button>
                 </div>
             </div>
 
             <!-- Estilo -->
             <div class="panel">
-                <div class="panel-title"><span>Estilo de Clawd</span></div>
+                <div class="panel-title"><span>Clawd Style</span></div>
                 <div id="outfitGroup" class="outfit-grid"></div>
             </div>
 
             <!-- Comportamiento -->
             <div class="panel">
-                <div class="panel-title"><span>Comportamiento</span></div>
+                <div class="panel-title"><span>Behavior</span></div>
                 <div id="modeGroup" class="btn-grid"></div>
             </div>
 
             <!-- Fondo -->
             <div class="panel">
-                <div class="panel-title"><span>Fondo</span></div>
+                <div class="panel-title"><span>Background</span></div>
                 <div id="bgGroup" class="btn-grid"></div>
             </div>
         </div>
@@ -202,22 +202,22 @@
 
         const OUTFITS = [
             { id: 'classic',    icon: CLAWD_ICON,                                                     label: 'Clawd', wide: true },
-            { id: 'sunglasses', icon: pxIcon('M1 3h10v1H1zm1 1h4v3H2zm5 0h4v3H7z'),                   label: 'Gafas' },
-            { id: 'suit',       icon: pxIcon('M5 1h2v2H5zm0 3h2v5H5zm-1 5h4v2H4z'),                   label: 'Traje' },
-            { id: 'wizard',     icon: pxIcon('M5 1h2v2H5zM4 3h4v3H4zM3 6h6v2H3zM1 8h10v2H1z'),        label: 'Mago' },
-            { id: 'gentleman',  icon: pxIcon('M3 1h6v6H3zM1 7h10v2H1z'),                              label: 'Elegante' },
-            { id: 'santa',      icon: pxIcon('M4 2h5v2H4zM3 4h5v2H3zM2 6h7v2H2zM9 4h2v2H9zM1 8h9v2H1z'), label: 'Navidad' },
-            { id: 'headphones', icon: pxIcon('M3 1h6v2H3zM1 3h2v3H1zM9 3h2v3H9zM1 6h3v4H1zM8 6h3v4H8z'), label: 'Auriculares' }
+            { id: 'sunglasses', icon: pxIcon('M1 3h10v1H1zm1 1h4v3H2zm5 0h4v3H7z'),                   label: 'Shades' },
+            { id: 'suit',       icon: pxIcon('M5 1h2v2H5zm0 3h2v5H5zm-1 5h4v2H4z'),                   label: 'Suit' },
+            { id: 'wizard',     icon: pxIcon('M5 1h2v2H5zM4 3h4v3H4zM3 6h6v2H3zM1 8h10v2H1z'),        label: 'Wizard' },
+            { id: 'gentleman',  icon: pxIcon('M3 1h6v6H3zM1 7h10v2H1z'),                              label: 'Gentleman' },
+            { id: 'santa',      icon: pxIcon('M4 2h5v2H4zM3 4h5v2H3zM2 6h7v2H2zM9 4h2v2H9zM1 8h9v2H1z'), label: 'Santa' },
+            { id: 'headphones', icon: pxIcon('M3 1h6v2H3zM1 3h2v3H1zM9 3h2v3H9zM1 6h3v4H1zM8 6h3v4H8z'), label: 'Headphones' }
         ];
         const MODES = [
-            { id: 'center', icon: pxIcon('M5 1h2v3H5zM5 8h2v3H5zM1 5h3v2H1zM8 5h3v2H8zM5 5h2v2H5z'), label: 'Centro' },
-            { id: 'wander', icon: pxIcon('M2 2h2v2H2zM5 2h2v2H5zM2 5h4v3H2zM7 5h2v2H7zM9 7h2v2H9zM6 8h4v3H6z'), label: 'Pasear' },
-            { id: 'follow', icon: pxIcon('M2 1h2v9H2zM4 3h2v6H4zM6 5h2v3H6zM8 7h2v1H8zM6 9h2v2H6z'), label: 'Seguir' },
+            { id: 'center', icon: pxIcon('M5 1h2v3H5zM5 8h2v3H5zM1 5h3v2H1zM8 5h3v2H8zM5 5h2v2H5z'), label: 'Center' },
+            { id: 'wander', icon: pxIcon('M2 2h2v2H2zM5 2h2v2H5zM2 5h4v3H2zM7 5h2v2H7zM9 7h2v2H9zM6 8h4v3H6z'), label: 'Wander' },
+            { id: 'follow', icon: pxIcon('M2 1h2v9H2zM4 3h2v6H4zM6 5h2v3H6zM8 7h2v1H8zM6 9h2v2H6z'), label: 'Follow' },
             { id: 'dvd',    icon: pxIcon('M1 1h10v2H1zM1 9h10v2H1zM1 3h2v6H1zM9 3h2v6H9zM5 5h2v2H5z'), label: 'DVD' }
         ];
         const BACKGROUNDS = [
-            { id: 'pure',   icon: pxIcon('M2 2h8v8H2z'),                                             label: 'Negro' },
-            { id: 'stars',  icon: pxIcon('M5 1h2v3H5zM5 8h2v3H5zM1 5h10v2H1zM3 3h6v6H3z'),           label: 'Estrellas' },
+            { id: 'pure',   icon: pxIcon('M2 2h8v8H2z'),                                             label: 'Black' },
+            { id: 'stars',  icon: pxIcon('M5 1h2v3H5zM5 8h2v3H5zM1 5h10v2H1zM3 3h6v6H3z'),           label: 'Stars' },
             { id: 'matrix', icon: pxIcon('M1 2h2v2H1zM3 4h2v2H3zM1 6h2v2H1zM6 8h5v2H6z'),            label: 'Terminal', wide: true }
         ];
 
@@ -749,10 +749,10 @@
         function updateScale(val) {
             CONFIG.pixelSize = Math.min(12, Math.max(2, parseFloat(val) || DEFAULTS.pixelSize));
             scaleSlider.value = CONFIG.pixelSize;
-            let desc = 'Medio';
-            if (CONFIG.pixelSize <= 3.25) desc = 'Diminuto';
+            let desc = 'Medium';
+            if (CONFIG.pixelSize <= 3.25) desc = 'Tiny';
             else if (CONFIG.pixelSize <= 5) desc = 'Mini';
-            else if (CONFIG.pixelSize >= 9.5) desc = 'Gigante';
+            else if (CONFIG.pixelSize >= 9.5) desc = 'Giant';
             const num = Number(CONFIG.pixelSize.toFixed(1));
             scaleLabel.textContent = `${desc} (${num}x)`;
         }
