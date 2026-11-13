@@ -1,7 +1,11 @@
 # `>_` clawd
 
-Interactive pixel-art live wallpaper featuring **Clawd**.  
+Interactive pixel-art live wallpaper featuring **Clawd**, the beloved 8-bit terminal mascot of **Claude Code**.  
 Single file (`index.html`), zero dependencies — ready for **Lively Wallpaper**, **Wallpaper Engine**, or any web browser.
+
+<p align="center">
+  <img src="preview.svg" alt="Clawd Live Pixel Wallpaper Animation" width="100%">
+</p>
 
 ---
 
@@ -71,4 +75,4 @@ const DEFAULTS = {
 
 ## `>_` disclaimer
 
-Non-commercial fan-made project. Not affiliated with or endorsed by Anthropic.
+Non-commercial fan-made project. **Clawd** is the official terminal mascot of **Claude Code** by Anthropic. This project is not affiliated with or endorsed by Anthropic.
