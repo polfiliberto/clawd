@@ -1,65 +1,65 @@
 # `>_` clawd
 
-Fondo de pantalla animado e interactivo en pixel art protagonizado por **Clawd**.  
-Un único archivo (`index.html`), cero dependencias, listo para **Lively Wallpaper**, **Wallpaper Engine** o el navegador.
+Interactive pixel-art live wallpaper featuring **Clawd**.  
+Single file (`index.html`), zero dependencies — ready for **Lively Wallpaper**, **Wallpaper Engine**, or any web browser.
 
 ---
 
 ## `>_` features
 
 ```txt
-tamaño        2x .. 12x  (Diminuto 3x · Medio 7x · Gigante 11x)
-estilos       Clawd · Gafas · Traje · Mago · Elegante · Navidad · Auriculares
-modos         Centro · Pasear · Seguir · DVD
-fondos        Negro (OLED) · Estrellas · Terminal
-extras        Borde blanco sticker · Modo sueño automático (zZz) · Mirada al cursor
+size          2x .. 12x  (Tiny 3x · Medium 7x · Giant 11x)
+styles        Clawd · Sunglasses · Suit · Wizard · Gentleman · Santa · Headphones
+modes         Center · Wander · Follow · DVD
+backgrounds   Pure Black (OLED) · Stars · Terminal
+extras        Sticker white border · Auto-sleep mode (zZz) · Cursor eye-tracking
 ```
 
 ---
 
 ## `>_` install
 
-Descarga el repositorio (**Code → Download ZIP**) o clónalo:
+Download the repository (**Code → Download ZIP**) or clone it:
 
 ```bash
 git clone https://github.com/polfiliberto/clawd.git
 ```
 
-Guarda la carpeta en un sitio fijo de tu ordenador y carga **`index.html`** en tu programa de fondos:
+Keep the folder in a permanent location on your computer and load **`index.html`** into your wallpaper app:
 
-### Lively Wallpaper (Windows · Gratis)
-1. Abre [Lively Wallpaper](https://www.rocksdanister.com/lively/).
-2. Pulsa **`+` Añadir fondo** y arrastra `index.html`.
+### Lively Wallpaper (Windows · Free & Open Source)
+1. Open [Lively Wallpaper](https://www.rocksdanister.com/lively/).
+2. Click **`+` Add Wallpaper** and drag `index.html` into the window.
 
 ### Wallpaper Engine (Windows · Steam)
-1. Pulsa **Abrir fondo → Abrir desde archivo** abajo a la izquierda.
-2. Selecciona `index.html`.
+1. Click **Open Wallpaper → Open from file** at the bottom left.
+2. Select `index.html`.
 
-### Navegador / macOS / Linux
-- Abre `index.html` directamente en cualquier navegador o úsalo en apps de fondos web como [Plash](https://sindresorhus.com/plash) (macOS) o *HTML Wallpaper* (KDE).
+### Browser / macOS / Linux
+- Open `index.html` directly in any browser, or use web-wallpaper apps like [Plash](https://sindresorhus.com/plash) (macOS) or *HTML Wallpaper* (KDE).
 
 ---
 
 ## `>_` controls
 
-| Input | Acción |
+| Input | Action |
 | :--- | :--- |
-| `[ESC]` | Abrir / cerrar la terminal de ajustes (`>_ clawd --settings`) |
-| `Clic en Clawd` | Salto con partículas pixeladas |
-| `Clic en el fondo` | Caminar hacia ese punto *(en modo Pasear)* |
-| `Sin mover el ratón` | Clawd se duerme (`zZz`) y despierta al volver a moverlo |
+| `[ESC]` | Open / close the settings terminal (`>_ clawd --settings`) |
+| `Click on Clawd` | Jump with pixel particles |
+| `Click on background` | Walk to that spot *(in Wander mode)* |
+| `Mouse idle` | Clawd falls asleep (`zZz`) and wakes up when you move the mouse |
 
-> **Nota para Lively Wallpaper:** si el escritorio no envía la tecla `[ESC]` al fondo, abre `index.html` en tu navegador para ver cómo queda tu configuración preferida y edita el bloque `DEFAULTS` al inicio del `<script>`.
+> **Note for Lively Wallpaper:** if your desktop doesn't forward the `[ESC]` key to the wallpaper, open `index.html` in your browser to preview your preferred setup and edit the `DEFAULTS` block at the top of `<script>`.
 
 ---
 
 ## `>_` config
 
-Puedes cambiar los valores iniciales editando `DEFAULTS` dentro de `index.html`:
+You can customize the default startup settings by editing `DEFAULTS` inside `index.html`:
 
 ```js
 const DEFAULTS = {
-    pixelSize: 4,            // 2..12 (3 Diminuto, 7 Medio, 11 Gigante)
+    pixelSize: 4,            // 2..12 (3 Tiny, 7 Medium, 11 Giant)
     outfit: 'sunglasses',    // 'classic', 'sunglasses', 'suit', 'wizard', 'gentleman', 'santa', 'headphones'
     mode: 'center',          // 'center', 'wander', 'follow', 'dvd'
     bgEffect: 'pure',        // 'pure', 'stars', 'matrix'
@@ -71,4 +71,4 @@ const DEFAULTS = {
 
 ## `>_` disclaimer
 
-Proyecto fan-made sin fines comerciales. No afiliado ni respaldado por Anthropic.
+Non-commercial fan-made project. Not affiliated with or endorsed by Anthropic.
